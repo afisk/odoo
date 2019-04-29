@@ -144,8 +144,7 @@ class MailActivity(models.Model):
     state = fields.Selection([
         ('overdue', 'Overdue'),
         ('today', 'Today'),
-        ('plannedq', 'Plannedq'),
-        ('completed', 'Completed')], 'State',
+        ('planned', 'Planned')], 'State',
         compute='_compute_state')
     recommended_activity_type_id = fields.Many2one('mail.activity.type', string="Recommended Activity Type", readonly=True)
     previous_activity_type_id = fields.Many2one('mail.activity.type', string='Previous Activity Type', readonly=True)
@@ -196,7 +195,7 @@ class MailActivity(models.Model):
         elif diff.days < 0:
             return 'overdue'
         else:
-            return 'plannedq'
+            return 'planned'
 
     @api.onchange('activity_type_id')
     def _onchange_activity_type_id(self):
@@ -359,8 +358,6 @@ class MailActivity(models.Model):
     def action_done(self):
         """ Wrapper without feedback because web button add context as
         parameter, therefore setting context to feedback """
-        for record in self:
-            record.activity_state = 'completed'
         return self.action_feedback()
 
     def action_feedback(self, feedback=False):
@@ -376,8 +373,6 @@ class MailActivity(models.Model):
                 mail_activity_type_id=activity.activity_type_id.id,
             )
             message |= record.message_ids[0]
-         for record in self:
-            record.activity_state = 'completed'
 
         self.unlink()
         return message.ids and message.ids[0] or False
@@ -385,8 +380,6 @@ class MailActivity(models.Model):
     def action_done_schedule_next(self):
         """ Wrapper without feedback because web button add context as
         parameter, therefore setting context to feedback """
-        for record in self:
-            record.activity_state = 'completed'
         return self.action_feedback_schedule_next()
 
     @api.multi
@@ -516,8 +509,7 @@ class MailActivityMixin(models.AbstractModel):
     activity_state = fields.Selection([
         ('overdue', 'Overdue'),
         ('today', 'Today'),
-        ('plannedq', 'Plannedq'),
-        ('completed', 'Completed')], string='Activity State',
+        ('planned', 'Planned')], string='Activity State',
         compute='_compute_activity_state',
         groups="base.group_user",
         help='Status based on activities\nOverdue: Due date is already passed\n'
@@ -552,9 +544,7 @@ class MailActivityMixin(models.AbstractModel):
             elif 'today' in states:
                 record.activity_state = 'today'
             elif 'planned' in states:
-                record.activity_state = 'plannedq'
-            elif 'plannedq' in states:
-                record.activity_state = 'plannedq'
+                record.activity_state = 'planned'
 
     @api.depends('activity_ids.date_deadline')
     def _compute_activity_date_deadline(self):
